@@ -61,7 +61,7 @@ partial class Program
             }
             TimeSpan.FromSeconds(1000);
 
-            for (int i = 2; i <= 8; i++)
+            for (int i = 2; i <= 4; i++)
             {
                 var link = "https://www.marocannonces.com/categorie/309/Emploi/Offres-emploi/@p.html";
                 driver.Navigate().GoToUrl(link.Replace("@p", i.ToString()));
@@ -99,7 +99,7 @@ partial class Program
         }
         driver.Close();
 
-        Console.WriteLine("les donner sont enregister ");
+        Console.WriteLine("les donnees sont enregister ");
 
 
     }
