@@ -7,101 +7,159 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
-
-partial class Program
+using DocumentFormat.OpenXml.Bibliography;
+using System.Runtime.CompilerServices;
+using SixLabors.Fonts;
+using System;
+namespace consoleApp1
 {
-    static void Main(string[] args)
+    public class JobPosting
     {
+        public string Title { get; set; }
+        public string Level { get; set; }
+        public string Salary { get; set; }
+        public string Location { get; set; }
 
-        IWebDriver driver = new ChromeDriver();
-        driver.Navigate().GoToUrl("https://www.marocannonces.com/categorie/309/Emploi/Offres-emploi.html");
-        WebDriverWait wait = new(driver, TimeSpan.FromSeconds(10));
-        IList<IWebElement> jobElements = driver.FindElements(By.CssSelector(".holder"));
-        int j = 0;
-
-
-        // Créer un fichier Excel
-        using (var workbook = new XLWorkbook())
+        public JobPosting(IWebElement element)
         {
-            var worksheet = workbook.Worksheets.Add("Offres d'emploi");
+            // Implement logic to extract details from the element using appropriate selectors
+            Title = element.FindElement(By.TagName("h3")).Text;
+            Level = element.FindElement(By.ClassName("niveauetude")).Text;
+            Salary = element.FindElement(By.ClassName("salary")).Text;
+            Location = element.FindElement(By.ClassName("location")).Text;
+        }
+        private static void Afficher(List<JobPosting> jobPostings, int i)
+        {
 
-            // Ajouter les en-têtes
-            worksheet.Cell(1, 1).Value = "Titre de l'offre";
-            worksheet.Cell(1, 2).Value = "Niveau d'étude";
-            worksheet.Cell(1, 3).Value = "Salaire";
-            worksheet.Cell(1, 4).Value = "Location";
-            int row = 2;
 
-            foreach (IWebElement otheroffre in jobElements)
-
+            foreach (var jobPosting in jobPostings)
             {
-                j++;
-                IWebElement titreOffre = otheroffre.FindElement(By.TagName("h3"));
 
-                IWebElement niveauetude = otheroffre.FindElement(By.ClassName("niveauetude"));
-                IWebElement salaire = otheroffre.FindElement(By.ClassName("salary"));
-                IWebElement location = otheroffre.FindElement(By.ClassName("location"));
-                Console.WriteLine($"les informations de la page N°{1}sont:");
-                Console.WriteLine($"Titre d'offre N°{j}: " + titreOffre.Text);
-                Console.WriteLine("Niveau d'étude: " + niveauetude.Text);
-                Console.WriteLine("Salaire: " + salaire.Text);
-                Console.WriteLine("Location: " + location.Text);
-
-                // Stocker les informations dans le fichier Excel
-                worksheet.Cell(row, 1).Value = titreOffre.Text;
-                worksheet.Cell(row, 2).Value = niveauetude.Text;
-                worksheet.Cell(row, 3).Value = salaire.Text;
-                worksheet.Cell(row, 4).Value = location.Text;
-
-                row++;
-
+                Console.WriteLine($"Titre d'offre n{i}: {jobPosting.Title}");
+                Console.WriteLine($"Niveau: {jobPosting.Level}");
+                Console.WriteLine($"Salaire: {jobPosting.Salary}");
+                Console.WriteLine($"Location: {jobPosting.Location}");
+                Console.WriteLine();
+                i++;
             }
-            TimeSpan.FromSeconds(1000);
+        }
+        static void Main(string[] args)
+        {
 
-            for (int i = 2; i <= 4; i++)
+            IWebDriver driver = new ChromeDriver();
+            driver.Navigate().GoToUrl("https://www.marocannonces.com/categorie/309/Emploi/Offres-emploi.html");
+            WebDriverWait wait = new(driver, TimeSpan.FromSeconds(10));
+            IList<IWebElement> jobElements = driver.FindElements(By.CssSelector(".holder"));
+            List<JobPosting> jobPostings = new List<JobPosting>();
+            int i = 1;
+            foreach (IWebElement element in jobElements)
             {
-                var link = "https://www.marocannonces.com/categorie/309/Emploi/Offres-emploi/@p.html";
-                driver.Navigate().GoToUrl(link.Replace("@p", i.ToString()));
-
-                // Attender que les elements se charge (auster le selected)
-                IList<IWebElement> jobs = driver.FindElements(By.CssSelector(".holder"));
-                row++;
-                foreach (IWebElement offre in jobs)
-
+                try
                 {
+                    jobPostings.Add(new JobPosting(element));
 
-                    IWebElement titreOffre = offre.FindElement(By.TagName("h3"));
-
-                    IWebElement niveauetude = offre.FindElement(By.ClassName("niveauetude"));
-                    IWebElement salaire = offre.FindElement(By.ClassName("salary"));
-                    IWebElement location = offre.FindElement(By.ClassName("location"));
-                    Console.WriteLine($"les informations de la page N°{i}sont:");
-                    Console.WriteLine($"Titre d'offre N°{j}: " + titreOffre.Text);
-                    Console.WriteLine("Niveau d'étude: " + niveauetude.Text);
-                    Console.WriteLine("Salaire: " + salaire.Text);
-                    Console.WriteLine("Location: " + location.Text);
-                    // Stocker les informations dans le fichier Excel
-                    worksheet.Cell(row, 1).Value = titreOffre.Text;
-                    worksheet.Cell(row, 2).Value = niveauetude.Text;
-                    worksheet.Cell(row, 3).Value = salaire.Text;
-                    worksheet.Cell(row, 4).Value = location.Text;
-
-                    row++;
-                    j++;
+                }
+                catch (NoSuchElementException)
+                {
+                    continue;
                 }
 
+
             }
-            TimeSpan.FromSeconds(6000);
-            workbook.SaveAs(" les Offres_emploi.xlsx");
+            Console.WriteLine("^les informations de la page n°¨1 sont:");
+            Afficher(jobPostings, i);
+
+
+
+            // Create a new workbook
+            using (var workbook = new XLWorkbook())
+            {
+                // Create a worksheet
+                var worksheet = workbook.Worksheets.Add("Job Postings");
+              
+                // Add headers to the first row with formatting
+                worksheet.Cell(1, 1).Value = "Title";
+                worksheet.Cell(1, 1).Style.Font.SetBold(true); // Make title bold
+                worksheet.Cell(1, 1).Style.Alignment.SetHorizontal((XLAlignmentHorizontalValues)HorizontalAlignment.Center); // Center align Title
+                worksheet.Cell(1, 2).Value = "Level";
+                worksheet.Cell(1, 2).Style.Alignment.SetHorizontal((XLAlignmentHorizontalValues)HorizontalAlignment.Center); // Center align level
+                worksheet.Cell(1, 2).Style.Font.SetBold(true);
+                worksheet.Cell(1, 3).Value = "Salary";
+                worksheet.Cell(1, 3).Style.Font.SetBold(true);
+                worksheet.Cell(1, 3).Style.Alignment.SetHorizontal((XLAlignmentHorizontalValues)HorizontalAlignment.Center); // Center align salary
+                worksheet.Cell(1, 4).Value = "Location";
+                worksheet.Cell(1, 4).Style.Font.SetBold(true);
+                worksheet.Cell(1, 4).Style.Alignment.SetHorizontal((XLAlignmentHorizontalValues)HorizontalAlignment.Center); // Center align location
+
+
+                // Populate the worksheet with data from the list of objects
+                int row = 2;
+                foreach (var jobPosting in jobPostings)
+                {
+                    worksheet.Cell(row, 1).Value = jobPosting.Title;
+                    worksheet.Cell(row, 2).Value = jobPosting.Level;
+                    worksheet.Cell(row, 3).Value = jobPosting.Salary;
+                    worksheet.Cell(row, 4).Value = jobPosting.Location;
+
+                    // Optional: Set default cell formatting for data rows
+                    worksheet.Range(row, 1, row, 4).Style.Alignment.SetHorizontal((XLAlignmentHorizontalValues)HorizontalAlignment.Left); // Left align data
+
+                    row++;
+                }
+
+                // les autres pages  
+                 for (int j = 2; j <= 4; j++)
+                 {
+                     var link = "https://www.marocannonces.com/categorie/309/Emploi/Offres-emploi/@p.html";
+                     driver.Navigate().GoToUrl(link.Replace("@p", j.ToString()));
+                     // Attender que les elements se charge (auster le selected)
+                     IList<IWebElement> jobs = driver.FindElements(By.CssSelector(".holder"));
+
+                     foreach (IWebElement element in jobs)
+                     {
+                         try
+                         {
+                             jobPostings.Add(new JobPosting(element));
+
+                         }
+                         catch (NoSuchElementException)
+                         {
+                             continue;
+                         }
+                     }
+                     Console.WriteLine($"^les informations de la page n°¨{j} sont:");
+                     Afficher(jobPostings, i = 1);
+
+                    
+
+                    // Populate the worksheet with data from the list of objects
+                    
+                    foreach (var jobPosting in jobPostings)
+                    {
+                        worksheet.Cell(row, 1).Value = jobPosting.Title;
+                        worksheet.Cell(row, 2).Value = jobPosting.Level;
+                        worksheet.Cell(row, 3).Value = jobPosting.Salary;
+                        worksheet.Cell(row, 4).Value = jobPosting.Location;
+
+                        // Optional: Set default cell formatting for data rows
+                        worksheet.Range(row, 1, row, 4).Style.Alignment.SetHorizontal((XLAlignmentHorizontalValues)HorizontalAlignment.Left); // Left align data
+
+                        row++;
+                    }
+
+
+
+                }
+
+                // Save the workbook to a file
+                workbook.SaveAs("job_postings.xlsx");
+            }
+            driver.Close();
+
         }
-        driver.Close();
-
-        Console.WriteLine("les donnees sont enregister ");
-
-
     }
-
 }
+
+        
